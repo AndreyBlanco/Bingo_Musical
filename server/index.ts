@@ -11,6 +11,7 @@ import {
   createRoomId,
   dealUniqueCard,
   getRoom,
+  registerCardBatch,
   releaseCardAssignment,
   saveRoom,
   startRoomRound,
@@ -134,6 +135,19 @@ app.post('/api/rooms/:id/cards', (c) => {
     const message = err instanceof Error ? err.message : 'No se pudo asignar el cartón.'
     return c.json({ error: message }, 409)
   }
+})
+
+app.post('/api/rooms/:id/cards/register-batch', async (c) => {
+  const room = getRoom(c.req.param('id'))
+  if (!room) return c.json({ error: 'Sala no encontrada.' }, 404)
+
+  const body = (await c.req.json()) as { fingerprints?: unknown }
+  if (!Array.isArray(body.fingerprints)) {
+    return c.json({ error: 'Falta el campo fingerprints.' }, 400)
+  }
+
+  registerCardBatch(room.id, body.fingerprints as string[])
+  return c.body(null, 204)
 })
 
 app.post('/api/rooms/:id/cards/release', async (c) => {

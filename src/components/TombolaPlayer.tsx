@@ -13,6 +13,7 @@ import { downloadCardsPdf } from '../lib/pdfCards'
 import {
   buildRoomShareUrl,
   createRoom,
+  registerPrintedCards,
   startRoomRound,
   updateRoom,
 } from '../lib/roomApi'
@@ -209,7 +210,7 @@ export function TombolaPlayer({
     }
   }
 
-  function handleGeneratePdf() {
+  async function handleGeneratePdf() {
     setPackError(null)
     setPackMessage(null)
 
@@ -224,20 +225,44 @@ export function TombolaPlayer({
       return
     }
 
+    let cards: ReturnType<typeof dealManyCards>
     try {
-      const cards = dealManyCards(songsToSharePool(poolSongs), layout, count)
-      const key = playlistKeyFromInput(playlistLabel)
-      saveCardPack(key, layout, cards)
-      savePrintCount(count)
-      downloadCardsPdf({
-        cards,
-        layout,
-        songByIndex: resolveSongMap(sharePool),
-        playlistLabel,
-      })
-      setPackMessage(`PDF listo: ${cards.length} cartones (${cols}×${rows}) guardados para esta playlist.`)
+      cards = dealManyCards(songsToSharePool(poolSongs), layout, count)
     } catch (err) {
       setPackError(err instanceof Error ? err.message : 'No se pudo generar el PDF.')
+      return
+    }
+
+    const key = playlistKeyFromInput(playlistLabel)
+    saveCardPack(key, layout, cards)
+    savePrintCount(count)
+
+    let registrationWarning: string | null = null
+    if (roomId) {
+      try {
+        await registerPrintedCards(roomId, cards)
+      } catch {
+        registrationWarning =
+          'El PDF fue descargado, pero los cartones impresos no pudieron registrarse en el servidor. Pueden coincidir con cartones digitales.'
+      }
+    } else {
+      registrationWarning =
+        'El PDF fue descargado sin sala activa. Los cartones impresos no están registrados y pueden coincidir con cartones digitales.'
+    }
+
+    downloadCardsPdf({
+      cards,
+      layout,
+      songByIndex: resolveSongMap(sharePool),
+      playlistLabel,
+    })
+
+    if (registrationWarning) {
+      setPackError(registrationWarning)
+    } else {
+      setPackMessage(
+        `PDF listo: ${cards.length} cartones (${cols}×${rows}) guardados para esta playlist.`,
+      )
     }
   }
 
@@ -405,13 +430,13 @@ export function TombolaPlayer({
             <button
               type="button"
               className="btn btn--primary btn--lg"
-              onClick={handleGeneratePdf}
+              onClick={() => void handleGeneratePdf()}
               disabled={Boolean(layoutError)}
             >
               Descargar PDF (Carta)
             </button>
             <p className="share-hint">
-              4 cartones por página. PDF local; cartones digitales vía API.
+              2 cartones por página (Carta). PDF local; cartones digitales vía API.
             </p>
             {existingPack ? (
               <p className="share-hint">

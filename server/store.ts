@@ -82,6 +82,16 @@ export function dealUniqueCard(room: Room): CardGrid {
   )
 }
 
+export function registerCardBatch(roomId: string, fingerprints: string[]): boolean {
+  const room = rooms.get(roomId)
+  if (!room) return false
+  for (const fp of fingerprints) {
+    room.assignedCardKeys.add(fp)
+  }
+  room.updatedAt = new Date().toISOString()
+  return true
+}
+
 export function releaseCardAssignment(roomId: string, grid: CardGrid): boolean {
   const room = rooms.get(roomId)
   if (!room) return false

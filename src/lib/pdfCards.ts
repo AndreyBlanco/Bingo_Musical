@@ -6,7 +6,8 @@ import { formatSongCell } from './songDisplay'
 const PAGE_W = 8.5
 const PAGE_H = 11
 const MARGIN = 0.4
-const GAP = 0.2
+const GAP = 0.25
+const CARDS_PER_PAGE = 2
 
 type PdfOptions = {
   cards: CardGrid[]
@@ -19,23 +20,22 @@ export function downloadCardsPdf(options: PdfOptions): void {
   const { cards, layout, songByIndex, playlistLabel } = options
   const doc = new jsPDF({ unit: 'in', format: 'letter', orientation: 'portrait' })
 
-  const cellW = (PAGE_W - MARGIN * 2 - GAP) / 2
-  const cellH = (PAGE_H - MARGIN * 2 - GAP) / 2
+  // Two full-width cards stacked on a letter page
+  const cardW = PAGE_W - MARGIN * 2
+  const cardH = (PAGE_H - MARGIN * 2 - GAP) / CARDS_PER_PAGE
 
   cards.forEach((grid, i) => {
-    if (i > 0 && i % 4 === 0) doc.addPage()
+    if (i > 0 && i % CARDS_PER_PAGE === 0) doc.addPage()
 
-    const slot = i % 4
-    const col = slot % 2
-    const row = Math.floor(slot / 2)
-    const x = MARGIN + col * (cellW + GAP)
-    const y = MARGIN + row * (cellH + GAP)
+    const slot = i % CARDS_PER_PAGE
+    const x = MARGIN
+    const y = MARGIN + slot * (cardH + GAP)
 
     drawCard(doc, {
       x,
       y,
-      w: cellW,
-      h: cellH,
+      w: cardW,
+      h: cardH,
       grid,
       layout,
       songByIndex,
@@ -67,15 +67,15 @@ function drawCard(
   doc.roundedRect(x, y, w, h, 0.08, 0.08)
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.text('Bingo Musical', x + 0.12, y + 0.28)
+  doc.setFontSize(14)
+  doc.text('Bingo Musical', x + 0.15, y + 0.32)
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
-  doc.text(`Cartón ${cardNumber} · ${layout.cols}×${layout.rows}`, x + 0.12, y + 0.45)
+  doc.setFontSize(10)
+  doc.text(`Cartón ${cardNumber} · ${layout.cols}×${layout.rows}`, x + 0.15, y + 0.52)
 
-  const headerH = 0.55
-  const pad = 0.1
+  const headerH = 0.65
+  const pad = 0.12
   const gridX = x + pad
   const gridY = y + headerH
   const gridW = w - pad * 2
@@ -95,25 +95,25 @@ function drawCard(
       doc.rect(cx, cy, cellW, cellH)
 
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(6.2)
-      doc.text(`#${playlistIndex}`, cx + 0.05, cy + 0.14)
+      doc.setFontSize(9)
+      doc.text(`#${playlistIndex}`, cx + 0.07, cy + 0.2)
 
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(6.2)
-      const titleLines = doc.splitTextToSize(display.title, cellW - 0.1)
+      doc.setFontSize(8.5)
+      const titleLines = doc.splitTextToSize(display.title, cellW - 0.14)
       const titleBudget = display.artist
-        ? Math.max(1, Math.floor((cellH - 0.36) / 0.11))
-        : Math.max(1, Math.floor((cellH - 0.22) / 0.11))
-      doc.text(titleLines.slice(0, titleBudget), cx + 0.05, cy + 0.26)
+        ? Math.max(1, Math.floor((cellH - 0.48) / 0.14))
+        : Math.max(1, Math.floor((cellH - 0.28) / 0.14))
+      doc.text(titleLines.slice(0, titleBudget), cx + 0.07, cy + 0.38)
 
       if (display.artist) {
         const titleUsed = Math.min(titleLines.length, titleBudget)
         doc.setFont('helvetica', 'normal')
-        doc.setFontSize(5.5)
-        const artistLines = doc.splitTextToSize(display.artist, cellW - 0.1)
-        const artistY = cy + 0.26 + titleUsed * 0.11
-        const artistBudget = Math.max(1, Math.floor((cy + cellH - artistY - 0.04) / 0.1))
-        doc.text(artistLines.slice(0, artistBudget), cx + 0.05, artistY)
+        doc.setFontSize(7.5)
+        const artistLines = doc.splitTextToSize(display.artist, cellW - 0.14)
+        const artistY = cy + 0.38 + titleUsed * 0.14
+        const artistBudget = Math.max(1, Math.floor((cy + cellH - artistY - 0.06) / 0.12))
+        doc.text(artistLines.slice(0, artistBudget), cx + 0.07, artistY)
       }
     }
   }

@@ -42,7 +42,7 @@ En producción, el QR usa el host real de la app.
 1. Configura columnas × filas y (opcional) máximo de canciones.
 2. Comparte QR o enlace.
 3. **Iniciar ronda** → play / pausa / siguiente.
-4. PDF Carta: 4 cartones por página (local, no usa la API).
+4. PDF Carta: 2 cartones por página (local, no usa la API).
 
 ## Producción (local)
 

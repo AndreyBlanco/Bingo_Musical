@@ -1,3 +1,4 @@
+import { cardFingerprint } from './cards'
 import type { CardGrid, CardLayout } from '../types'
 import type { ShareSong } from './sharePool'
 
@@ -113,6 +114,19 @@ export async function startRoomRound(roomId: string): Promise<PublicRoom> {
 export async function dealRoomCard(roomId: string): Promise<DealtCard> {
   const response = await fetch(`/api/rooms/${roomId}/cards`, { method: 'POST' })
   return parseJson<DealtCard>(response)
+}
+
+export async function registerPrintedCards(roomId: string, grids: CardGrid[]): Promise<void> {
+  const fingerprints = grids.map(cardFingerprint)
+  const response = await fetch(`/api/rooms/${roomId}/cards/register-batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fingerprints }),
+  })
+  if (!response.ok) {
+    const data = (await response.json().catch(() => ({}))) as { error?: string }
+    throw new Error(data.error ?? `Error de API (${response.status})`)
+  }
 }
 
 export async function releaseRoomCard(roomId: string, grid: CardGrid): Promise<void> {
